@@ -21,14 +21,14 @@
        <item>
         <widget class="QPushButton" name="btn_refresh">
          <property name="text">
-          <string>Refresh</string>
+          <string>Scan</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="btn_cut">
          <property name="text">
-          <string>PushButton</string>
+          <string>Cut</string>
          </property>
         </widget>
        </item>
@@ -42,7 +42,7 @@
       </layout>
      </item>
      <item>
-      <widget class="QTableWidget" name="tbl_list"/>
+      <widget class="QTableView" name="tbl_hosts"/>
      </item>
     </layout>
    </item>
