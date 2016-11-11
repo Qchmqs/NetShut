@@ -6,9 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>523</width>
-    <height>376</height>
+    <width>640</width>
+    <height>480</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>640</width>
+    <height>480</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>640</width>
+    <height>480</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>NetShut</string>
@@ -28,7 +40,11 @@
        <item>
         <widget class="QPushButton" name="btn_cut">
          <property name="text">
-          <string>Cut</string>
+          <string>Cut All</string>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../img/lan-disconnect.png</normaloff>../img/lan-disconnect.png</iconset>
          </property>
         </widget>
        </item>
@@ -42,7 +58,17 @@
       </layout>
      </item>
      <item>
-      <widget class="QTableView" name="tbl_hosts"/>
+      <widget class="QTableWidget" name="tbl_hosts">
+       <property name="selectionMode">
+        <enum>QAbstractItemView::SingleSelection</enum>
+       </property>
+       <property name="showGrid">
+        <bool>false</bool>
+       </property>
+       <attribute name="verticalHeaderVisible">
+        <bool>false</bool>
+       </attribute>
+      </widget>
      </item>
     </layout>
    </item>

@@ -6,12 +6,15 @@ import subprocess
 import sys
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItemModel
-from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QAbstractItemView
+from PyQt5.QtGui import QStandardItemModel, QIcon
+from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp
 
 from ui_main import Ui_Form
 
 R_IP, R_MAC, R_STATUS = range(3)
+
+VERSION = 0.1
+TITLE = "Netshut {}".format(VERSION)
 
 
 class MainWidget(QWidget):
@@ -20,9 +23,18 @@ class MainWidget(QWidget):
         self.ui = Ui_Form()
         self.ui.setupUi(self)
         self.ui.btn_refresh.clicked.connect(self.btn_refresh_clicked)
+        self.ui.btn_refresh.setIcon(QIcon("img/scan.png"))
         self.ui.tbl_hosts.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.tbl_hosts.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.tbl_hosts.verticalHeader().setVisible(False)
+        self.ui.tbl_hosts.setColumnCount(3)
+        self.ui.tbl_hosts.setHorizontalHeaderLabels(["IP Address","MAC Address","Status"])
+        self.ui.tbl_hosts.setColumnWidth(0,200)
+        self.ui.tbl_hosts.setColumnWidth(1,200)
+        self.ui.tbl_hosts.setShowGrid(False)
+
+        self._gw = self.get_gateway()
+        self._iface = "wlp2s0"
 
         # TODO Remove after ui complete
         self.populate_model([('192.168.1.1', '5c:f9:6a:23:7c:1a'), ('192.168.1.13', '00:2d:00:06:a0:2f'),
@@ -38,34 +50,51 @@ class MainWidget(QWidget):
         stdout, stderr = p.communicate()
         return p.returncode, stdout, stderr
 
+
+    def get_gateway(self):
+        (s_code, s_out) = subprocess.getstatusoutput("ip route list")
+        gw_ip = s_out.split("\n")[0].split(" ")[2]
+        return gw_ip
+
+
     def get_live_hosts(self):
-        (s_code, s_out) = subprocess.getstatusoutput("arp-scan --interface=wlp2s0 192.168.1.1/24")
+        (s_code, s_out) = subprocess.getstatusoutput("arp-scan --interface={} {}/24".format(self._iface,self._gw))
 
         if s_code == 0:
             hosts = self.pat_arp.findall(s_out)
+
             self.populate_model(hosts)
-            print(hosts)
 
         else:
-            QMessageBox.critical(self, "Netshut", "Code : " + str(s_out))
+            QMessageBox.critical(self, TITLE, s_out)
 
-    def populate_model(self, hosts):
-        model = QStandardItemModel(0, 3, self)
-        model.setHeaderData(R_IP, Qt.Horizontal, "IP Address")
-        model.setHeaderData(R_MAC, Qt.Horizontal, "MAC Address")
-        model.setHeaderData(R_STATUS, Qt.Horizontal, "Status")
-        for host in hosts:
-            model.insertRow(0)
-            model.setData(model.index(0, R_IP), host[0])
-            model.setData(model.index(0, R_MAC), host[1])
-            model.setData(model.index(0, R_STATUS), "Up")
-
-        self.ui.tbl_hosts.setModel(model)
-        self.ui.tbl_hosts.resizeColumnsToContents()
+    def populate_model(self,hosts):
+        self.ui.tbl_hosts.setRowCount(len(hosts))
+        for i,host in enumerate(hosts):
+            self.ui.tbl_hosts.setItem(i,R_IP,QTableWidgetItem(host[0]))
+            self.ui.tbl_hosts.setItem(i,R_MAC,QTableWidgetItem(host[1]))
+            self.btn_cut = QPushButton("Cut")
+            self.btn_cut.setIcon(QIcon("img/lan-connect.png"))
+            self.btn_cut.clicked.connect(self.btn_cut_clicked)
+            self.ui.tbl_hosts.setCellWidget(i,R_STATUS,self.btn_cut)
 
     def btn_refresh_clicked(self):
         self.get_live_hosts()
 
+    def btn_cut_clicked(self):
+        button = qApp.focusWidget()
+
+        # or button = self.sender()
+        index = self.ui.tbl_hosts.indexAt(button.pos())
+
+        if index.isValid():
+            if button.text().startswith("C"):
+                button.setText("Uncut")
+                button.setIcon(QIcon("img/lan-disconnect.png"))
+            else:
+                button.setText("Cut")
+                button.setIcon(QIcon("img/lan-connect.png"))
+            print(index.row(), index.column())
 
 def main():
     os.environ["QT_STYLE_OVERRIDE"] = "breeze"
