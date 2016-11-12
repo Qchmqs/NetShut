@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from PyQt5 import QtNetwork
 import os
 import re
 import subprocess
 import sys
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItemModel, QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
+from PyQt5 import QtNetwork
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
     QMainWindow, QInputDialog
 
 from ui_main import Ui_MainWindow
@@ -27,10 +26,14 @@ class MainWidget(QMainWindow):
         self.ui.setupUi(self)
         self.initUi()
 
+        for k,v in os.environ.items():
+            print("{} : {}".format(k,v))
+
         # Compile Re's
         self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
-        self.pat_gip = re.compile("inet\s(.+)\/")
+        self.pat_gip = re.compile("inet\s(.+)/")
 
+        self.hosts = []
         self._gw = self.get_gateway()
         self._iface = "wlp2s0"
         self._mac = ""
@@ -38,7 +41,6 @@ class MainWidget(QMainWindow):
 
         self.prompt_iface()
         self.get_ip()
-
 
         self.ui.lbl_gw.setText("<b>{}</b>".format(self._gw))
         self.ui.lbl_mac.setText("<b>{}</b>".format(self._mac))
@@ -51,7 +53,7 @@ class MainWidget(QMainWindow):
                              ('192.168.1.12', '30:19:66:71:49:6f')])
 
     def initUi(self):
-        self.ui.act_scan.triggered.connect(self.btn_refresh_clicked)
+        self.ui.act_scan.triggered.connect(self.act_scan_triggered)
         self.ui.act_scan.setIcon(QIcon("img/scan.png"))
         self.ui.act_cut.setIcon(QIcon("img/lan-disconnect.png"))
         self.ui.tbl_hosts.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -66,7 +68,11 @@ class MainWidget(QMainWindow):
 
     def get_ip(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip addr show {}".format(self._iface))
-        self._ip = self.pat_gip.findall(s_out)[0]
+        try:
+            self._ip = self.pat_gip.findall(s_out)[0]
+        except IndexError:
+            print("COULD NOT GET IP")
+            exit()
 
     def prompt_iface(self):
         ifaces_names = []
@@ -81,7 +87,7 @@ class MainWidget(QMainWindow):
             self._iface = result
             self._mac = ifaces_macs[ifaces_names.index(result)]
         else:
-            QMessageBox.critical(self,TITLE,"You must select an interface card")
+            QMessageBox.critical(self, TITLE, "You must select an interface card")
             exit()
 
     def gso(self, *args, **kwargs):
@@ -126,7 +132,18 @@ class MainWidget(QMainWindow):
 
         self.set_device_man()
 
-    def btn_refresh_clicked(self):
+    def set_device_man(self):
+        f = open("/usr/share/nmap/nmap-mac-prefixes")
+
+        for line in f.readlines():
+            for i, host in enumerate(self.hosts):
+                mac = host[1].replace(":", "").upper()[:6]
+                if line.startswith(mac):
+                    self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem(line[7:]))
+                    break
+
+    def act_scan_triggered(self):
+        self.ui.tbl_hosts.clearContents()
         self.get_live_hosts()
 
     def btn_cut_clicked(self):
@@ -144,19 +161,8 @@ class MainWidget(QMainWindow):
                 button.setIcon(QIcon("img/lan-connect.png"))
             print(index.row(), index.column())
 
-    def set_device_man(self):
-        f = open("/usr/share/nmap/nmap-mac-prefixes")
-
-        for line in f.readlines():
-            for i, host in enumerate(self.hosts):
-                mac = host[1].replace(":", "").upper()[:6]
-                if line.startswith(mac):
-                    self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem(line[7:]))
-                    break
-
 
 def main():
-    os.environ["QT_STYLE_OVERRIDE"] = "breeze"
     app = QApplication(sys.argv)
 
     w = MainWidget()
