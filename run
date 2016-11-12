@@ -1,5 +1,5 @@
 #!/bin/bash
 
-kdesudo ./main.py
+kdesudo  -c "HOME=$HOME ./main.py"
 
 
