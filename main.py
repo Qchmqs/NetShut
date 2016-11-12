@@ -9,6 +9,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
     QMainWindow, QInputDialog, QDesktopWidget
+from about import AboutDialog
 
 from ui.main_ui import Ui_MainWindow
 
@@ -64,6 +65,7 @@ class MainWidget(QMainWindow):
                              ('192.168.1.12', '30:19:66:71:49:6f')])
 
     def init_ui(self):
+        self.ui.action_About.triggered.connect(self.act_about_triggered)
         self.ui.act_scan.triggered.connect(self.act_scan_triggered)
         self.ui.act_scan.setIcon(QIcon("img/scan.png"))
         self.ui.act_cut.setIcon(QIcon("img/lan-disconnect.png"))
@@ -148,6 +150,9 @@ class MainWidget(QMainWindow):
         ct = CommandThread("arp-scan --interface={} {}/24".format(self._iface, self._gw), self)
         ct.results.connect(self.scan_completed)
         ct.start()
+
+    def act_about_triggered(self):
+        AboutDialog(self).show()
 
     def scan_completed(self, s_code, s_out):
         if s_code == 0:
