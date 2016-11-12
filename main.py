@@ -7,9 +7,10 @@ import sys
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp
+from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
+    QMainWindow
 
-from ui_main import Ui_Form
+from ui_main import Ui_MainWindow
 
 TABLE_COLUMN_COUNT = 4
 R_IP, R_MAC,R_MAC_MAN, R_STATUS = range(TABLE_COLUMN_COUNT)
@@ -18,23 +19,12 @@ VERSION = 0.1
 TITLE = "Netshut {}".format(VERSION)
 
 
-class MainWidget(QWidget):
+class MainWidget(QMainWindow):
     def __init__(self):
         super(MainWidget, self).__init__()
-        self.ui = Ui_Form()
+        self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.btn_refresh.clicked.connect(self.btn_refresh_clicked)
-        self.ui.btn_refresh.setIcon(QIcon("img/scan.png"))
-        self.ui.btn_cut_all.setIcon(QIcon("img/lan-disconnect.png"))
-        self.ui.tbl_hosts.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.ui.tbl_hosts.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.ui.tbl_hosts.verticalHeader().setVisible(False)
-        self.ui.tbl_hosts.setColumnCount(TABLE_COLUMN_COUNT)
-        self.ui.tbl_hosts.setHorizontalHeaderLabels(["IP Address","MAC Address","Device Manufacturer","Status"])
-        self.ui.tbl_hosts.setColumnWidth(0,100)
-        self.ui.tbl_hosts.setColumnWidth(1,150)
-        self.ui.tbl_hosts.setColumnWidth(2,240)
-        self.ui.tbl_hosts.setShowGrid(False)
+        self.initUi()
 
         self._gw = self.get_gateway()
         self._iface = "wlp2s0"
@@ -46,6 +36,20 @@ class MainWidget(QWidget):
 
         # Compile Re's
         self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
+
+    def initUi(self):
+        self.ui.act_scan.triggered.connect(self.btn_refresh_clicked)
+        self.ui.act_scan.setIcon(QIcon("img/scan.png"))
+        self.ui.act_cut.setIcon(QIcon("img/lan-disconnect.png"))
+        self.ui.tbl_hosts.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.tbl_hosts.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.tbl_hosts.verticalHeader().setVisible(False)
+        self.ui.tbl_hosts.setColumnCount(TABLE_COLUMN_COUNT)
+        self.ui.tbl_hosts.setHorizontalHeaderLabels(["IP Address", "MAC Address", "Device Manufacturer", "Status"])
+        self.ui.tbl_hosts.setColumnWidth(0, 100)
+        self.ui.tbl_hosts.setColumnWidth(1, 150)
+        self.ui.tbl_hosts.setColumnWidth(2, 240)
+        self.ui.tbl_hosts.setShowGrid(False)
 
     def gso(self, *args, **kwargs):
         # Get Status output
