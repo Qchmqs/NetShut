@@ -134,19 +134,19 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
    <addaction name="act_scan"/>
    <addaction name="act_cut"/>
   </widget>
   <action name="act_scan">
    <property name="text">
-    <string>Scan</string>
+    <string>&amp;Scan</string>
    </property>
   </action>
   <action name="act_cut">
    <property name="text">
-    <string>Cut All</string>
+    <string>&amp;Cut All</string>
    </property>
   </action>
   <action name="action_Help">

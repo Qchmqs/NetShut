@@ -4,11 +4,14 @@ import os
 import re
 import subprocess
 import sys
+import threading
 
 from PyQt5 import QtNetwork
+from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
     QMainWindow, QInputDialog
+import time
 
 from ui_main import Ui_MainWindow
 
@@ -19,15 +22,25 @@ VERSION = 0.1
 TITLE = "Netshut {}".format(VERSION)
 
 
+class CommandThread(QThread):
+    results = pyqtSignal(object, object)
+
+    def __init__(self, cmd, parent=None):
+        super().__init__(parent)
+        self.cmd = cmd
+
+    def run(self):
+        (s_code, s_out) = subprocess.getstatusoutput(self.cmd)
+        self.results.emit(s_code, s_out)
+
+
 class MainWidget(QMainWindow):
     def __init__(self):
         super(MainWidget, self).__init__()
+        self.th = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.initUi()
-
-        for k,v in os.environ.items():
-            print("{} : {}".format(k,v))
+        self.init_ui()
 
         # Compile Re's
         self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
@@ -52,7 +65,7 @@ class MainWidget(QMainWindow):
                              ('192.168.1.10', 'd0:6f:4a:61:9b:06'), ('192.168.1.11', '94:35:0a:ef:86:4d'),
                              ('192.168.1.12', '30:19:66:71:49:6f')])
 
-    def initUi(self):
+    def init_ui(self):
         self.ui.act_scan.triggered.connect(self.act_scan_triggered)
         self.ui.act_scan.setIcon(QIcon("img/scan.png"))
         self.ui.act_cut.setIcon(QIcon("img/lan-disconnect.png"))
@@ -90,12 +103,6 @@ class MainWidget(QMainWindow):
             QMessageBox.critical(self, TITLE, "You must select an interface card")
             exit()
 
-    def gso(self, *args, **kwargs):
-        # Get Status output
-        p = subprocess.Popen(*args, **kwargs)
-        stdout, stderr = p.communicate()
-        return p.returncode, stdout, stderr
-
     def get_gateway(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip route list")
         try:
@@ -107,16 +114,7 @@ class MainWidget(QMainWindow):
         return gw_ip
 
     def get_live_hosts(self):
-
-        (s_code, s_out) = subprocess.getstatusoutput("arp-scan --interface={} {}/24".format(self._iface, self._gw))
-
-        if s_code == 0:
-            hosts = self.pat_arp.findall(s_out)
-
-            self.populate_model(hosts)
-
-        else:
-            QMessageBox.critical(self, TITLE, s_out)
+        pass
 
     def populate_model(self, hosts):
         self.hosts = hosts
@@ -126,6 +124,8 @@ class MainWidget(QMainWindow):
             self.ui.tbl_hosts.setItem(i, R_MAC, QTableWidgetItem(host[1]))
             self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem("Unknown"))
             self.btn_cut = QPushButton("Cut")
+            self.btn_cut.setCheckable(True)
+            self.btn_cut.setChecked(False)
             self.btn_cut.setIcon(QIcon("img/lan-connect.png"))
             self.btn_cut.clicked.connect(self.btn_cut_clicked)
             self.ui.tbl_hosts.setCellWidget(i, R_STATUS, self.btn_cut)
@@ -144,7 +144,21 @@ class MainWidget(QMainWindow):
 
     def act_scan_triggered(self):
         self.ui.tbl_hosts.clearContents()
-        self.get_live_hosts()
+        self.ui.act_scan.setEnabled(False)
+        self.ui.statusbar.showMessage("Scanning")
+        ct = CommandThread("arp-scan --interface={} {}/24".format(self._iface, self._gw), self)
+        ct.results.connect(self.scan_completed)
+        ct.start()
+
+    def scan_completed(self, s_code, s_out):
+        if s_code == 0:
+            hosts = self.pat_arp.findall(s_out)
+            self.populate_model(hosts)
+        else:
+            QMessageBox.critical(self, TITLE, s_out)
+
+        self.ui.statusbar.showMessage("Done")
+        self.ui.act_scan.setEnabled(True)
 
     def btn_cut_clicked(self):
         button = qApp.focusWidget()
@@ -153,13 +167,14 @@ class MainWidget(QMainWindow):
         index = self.ui.tbl_hosts.indexAt(button.pos())
 
         if index.isValid():
-            if button.text().startswith("C"):
-                button.setText("Uncut")
+            if button.isChecked():
+                button.setText("&Uncut")
                 button.setIcon(QIcon("img/lan-disconnect.png"))
             else:
-                button.setText("Cut")
+                button.setText("&Cut")
                 button.setIcon(QIcon("img/lan-connect.png"))
-            print(index.row(), index.column())
+
+
 
 
 def main():
