@@ -10,7 +10,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
     QMainWindow, QInputDialog, QDesktopWidget
 
-from ui_main import Ui_MainWindow
+from ui.main_ui import Ui_MainWindow
 
 TABLE_COLUMN_COUNT = 4
 R_IP, R_MAC, R_MAC_MAN, R_STATUS = range(TABLE_COLUMN_COUNT)
