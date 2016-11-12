@@ -64,17 +64,31 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="0" column="3">
        <widget class="QLabel" name="label_5">
         <property name="text">
          <string>Gateway IP :</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
+      <item row="0" column="4">
        <widget class="QLabel" name="lbl_gw">
         <property name="text">
          <string>&lt;b&gt;192.168.1.1&lt;/b&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Interface :</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QLabel" name="lbl_iface">
+        <property name="text">
+         <string>&lt;b&gt;wlp2s0&lt;/b&gt;</string>
         </property>
        </widget>
       </item>

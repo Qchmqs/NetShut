@@ -43,6 +43,7 @@ class MainWidget(QMainWindow):
         self.ui.lbl_gw.setText("<b>{}</b>".format(self._gw))
         self.ui.lbl_mac.setText("<b>{}</b>".format(self._mac))
         self.ui.lbl_ip.setText("<b>{}</b>".format(self._ip))
+        self.ui.lbl_iface.setText("<b>{}</b>".format(self._iface))
 
         # TODO Remove after ui complete
         self.populate_model([('192.168.1.1', '5c:f9:6a:23:7c:1a'), ('192.168.1.13', '00:2d:00:06:a0:2f'),
