@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
 import re
 import subprocess
 import sys
-import threading
 
 from PyQt5 import QtNetwork
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
-    QMainWindow, QInputDialog
-import time
+    QMainWindow, QInputDialog, QDesktopWidget
 
 from ui_main import Ui_MainWindow
 
@@ -41,6 +38,7 @@ class MainWidget(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.init_ui()
+        self.center()
 
         # Compile Re's
         self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
@@ -94,8 +92,9 @@ class MainWidget(QMainWindow):
         for i in ifaces:
             ifaces_names.append(str(i.name()))
             ifaces_macs.append(str(i.hardwareAddress()))
+
         result, ok = QInputDialog.getItem(self, self.tr("Network Interfaces"), self.tr("Select your Interface:"),
-                                          ifaces_names, 0, True)
+                                          ifaces_names, 0, False)
         if ok:
             self._iface = result
             self._mac = ifaces_macs[ifaces_names.index(result)]
@@ -174,7 +173,11 @@ class MainWidget(QMainWindow):
                 button.setText("&Cut")
                 button.setIcon(QIcon("img/lan-connect.png"))
 
-
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
 
 def main():
