@@ -25,6 +25,16 @@
   <property name="windowTitle">
    <string>NetShut</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QPushButton {
+	background: rgb(255, 37, 66);
+	font-weight: bold;
+}
+QPushButton:hover {
+	background: rgb(67, 66, 65);
+	color: rgb(218, 218, 203);
+}</string>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -35,10 +45,14 @@
          <property name="text">
           <string>Scan</string>
          </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../img/scan.png</normaloff>../img/scan.png</iconset>
+         </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="btn_cut">
+        <widget class="QPushButton" name="btn_cut_all">
          <property name="text">
           <string>Cut All</string>
          </property>
@@ -52,6 +66,55 @@
         <widget class="QPushButton" name="pushButton">
          <property name="text">
           <string>PushButton</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QGridLayout" name="gridLayout">
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="1">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;192.168.1.14&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>MAC Address :</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>IP Address:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Gateway Address</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>&lt;b&gt;192.168.1.1&lt;/b&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>&lt;b&gt;5c:f9:6a:23:7c:1a&lt;/b&gt;</string>
          </property>
         </widget>
        </item>

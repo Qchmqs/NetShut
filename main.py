@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QAbstractItemVie
 
 from ui_main import Ui_Form
 
-R_IP, R_MAC, R_STATUS = range(3)
+TABLE_COLUMN_COUNT = 4
+R_IP, R_MAC,R_MAC_MAN, R_STATUS = range(TABLE_COLUMN_COUNT)
 
 VERSION = 0.1
 TITLE = "Netshut {}".format(VERSION)
@@ -24,13 +25,15 @@ class MainWidget(QWidget):
         self.ui.setupUi(self)
         self.ui.btn_refresh.clicked.connect(self.btn_refresh_clicked)
         self.ui.btn_refresh.setIcon(QIcon("img/scan.png"))
+        self.ui.btn_cut_all.setIcon(QIcon("img/lan-disconnect.png"))
         self.ui.tbl_hosts.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.tbl_hosts.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.tbl_hosts.verticalHeader().setVisible(False)
-        self.ui.tbl_hosts.setColumnCount(3)
-        self.ui.tbl_hosts.setHorizontalHeaderLabels(["IP Address","MAC Address","Status"])
-        self.ui.tbl_hosts.setColumnWidth(0,200)
-        self.ui.tbl_hosts.setColumnWidth(1,200)
+        self.ui.tbl_hosts.setColumnCount(TABLE_COLUMN_COUNT)
+        self.ui.tbl_hosts.setHorizontalHeaderLabels(["IP Address","MAC Address","Device Manufacturer","Status"])
+        self.ui.tbl_hosts.setColumnWidth(0,100)
+        self.ui.tbl_hosts.setColumnWidth(1,150)
+        self.ui.tbl_hosts.setColumnWidth(2,240)
         self.ui.tbl_hosts.setShowGrid(False)
 
         self._gw = self.get_gateway()
@@ -50,14 +53,18 @@ class MainWidget(QWidget):
         stdout, stderr = p.communicate()
         return p.returncode, stdout, stderr
 
-
     def get_gateway(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip route list")
-        gw_ip = s_out.split("\n")[0].split(" ")[2]
+        try:
+            gw_ip = s_out.split("\n")[0].split(" ")[2]
+        except IndexError:
+            print("COULD NOT GET GATEWAY IP")
+            exit()
+
         return gw_ip
 
-
     def get_live_hosts(self):
+
         (s_code, s_out) = subprocess.getstatusoutput("arp-scan --interface={} {}/24".format(self._iface,self._gw))
 
         if s_code == 0:
@@ -69,14 +76,18 @@ class MainWidget(QWidget):
             QMessageBox.critical(self, TITLE, s_out)
 
     def populate_model(self,hosts):
+        self.hosts = hosts
         self.ui.tbl_hosts.setRowCount(len(hosts))
         for i,host in enumerate(hosts):
             self.ui.tbl_hosts.setItem(i,R_IP,QTableWidgetItem(host[0]))
             self.ui.tbl_hosts.setItem(i,R_MAC,QTableWidgetItem(host[1]))
+            self.ui.tbl_hosts.setItem(i,R_MAC_MAN,QTableWidgetItem("Unknown"))
             self.btn_cut = QPushButton("Cut")
             self.btn_cut.setIcon(QIcon("img/lan-connect.png"))
             self.btn_cut.clicked.connect(self.btn_cut_clicked)
             self.ui.tbl_hosts.setCellWidget(i,R_STATUS,self.btn_cut)
+
+        self.set_device_man()
 
     def btn_refresh_clicked(self):
         self.get_live_hosts()
@@ -95,6 +106,18 @@ class MainWidget(QWidget):
                 button.setText("Cut")
                 button.setIcon(QIcon("img/lan-connect.png"))
             print(index.row(), index.column())
+
+    def set_device_man(self):
+        f = open("/usr/share/nmap/nmap-mac-prefixes")
+
+        for line in f.readlines():
+            for i,host in enumerate(self.hosts):
+                mac = host[1].replace(":","").upper()[:6]
+                if line.startswith(mac):
+                    self.ui.tbl_hosts.setItem(i,R_MAC_MAN,QTableWidgetItem(line[7:]))
+                    break
+
+
 
 def main():
     os.environ["QT_STYLE_OVERRIDE"] = "breeze"
