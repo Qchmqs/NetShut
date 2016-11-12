@@ -27,26 +27,27 @@ class MainWidget(QMainWindow):
         self.ui.setupUi(self)
         self.initUi()
 
+        # Compile Re's
+        self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
+        self.pat_gip = re.compile("inet\s(.+)\/")
+
         self._gw = self.get_gateway()
         self._iface = "wlp2s0"
         self._mac = ""
+        self._ip = ""
 
         self.prompt_iface()
-
-
-
+        self.get_ip()
 
 
         self.ui.lbl_gw.setText("<b>{}</b>".format(self._gw))
         self.ui.lbl_mac.setText("<b>{}</b>".format(self._mac))
+        self.ui.lbl_ip.setText("<b>{}</b>".format(self._ip))
 
         # TODO Remove after ui complete
         self.populate_model([('192.168.1.1', '5c:f9:6a:23:7c:1a'), ('192.168.1.13', '00:2d:00:06:a0:2f'),
                              ('192.168.1.10', 'd0:6f:4a:61:9b:06'), ('192.168.1.11', '94:35:0a:ef:86:4d'),
                              ('192.168.1.12', '30:19:66:71:49:6f')])
-
-        # Compile Re's
-        self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
 
     def initUi(self):
         self.ui.act_scan.triggered.connect(self.btn_refresh_clicked)
@@ -62,6 +63,9 @@ class MainWidget(QMainWindow):
         self.ui.tbl_hosts.setColumnWidth(2, 240)
         self.ui.tbl_hosts.setShowGrid(False)
 
+    def get_ip(self):
+        (s_code, s_out) = subprocess.getstatusoutput("ip addr show {}".format(self._iface))
+        self._ip = self.pat_gip.findall(s_out)[0]
 
     def prompt_iface(self):
         ifaces_names = []
