@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from PyQt5 import QtNetwork
 import os
 import re
 import subprocess
@@ -8,12 +9,12 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
-    QMainWindow
+    QMainWindow, QInputDialog
 
 from ui_main import Ui_MainWindow
 
 TABLE_COLUMN_COUNT = 4
-R_IP, R_MAC,R_MAC_MAN, R_STATUS = range(TABLE_COLUMN_COUNT)
+R_IP, R_MAC, R_MAC_MAN, R_STATUS = range(TABLE_COLUMN_COUNT)
 
 VERSION = 0.1
 TITLE = "Netshut {}".format(VERSION)
@@ -28,6 +29,16 @@ class MainWidget(QMainWindow):
 
         self._gw = self.get_gateway()
         self._iface = "wlp2s0"
+        self._mac = ""
+
+        self.prompt_iface()
+
+
+
+
+
+        self.ui.lbl_gw.setText("<b>{}</b>".format(self._gw))
+        self.ui.lbl_mac.setText("<b>{}</b>".format(self._mac))
 
         # TODO Remove after ui complete
         self.populate_model([('192.168.1.1', '5c:f9:6a:23:7c:1a'), ('192.168.1.13', '00:2d:00:06:a0:2f'),
@@ -51,6 +62,23 @@ class MainWidget(QMainWindow):
         self.ui.tbl_hosts.setColumnWidth(2, 240)
         self.ui.tbl_hosts.setShowGrid(False)
 
+
+    def prompt_iface(self):
+        ifaces_names = []
+        ifaces_macs = []
+        ifaces = QtNetwork.QNetworkInterface.allInterfaces()
+        for i in ifaces:
+            ifaces_names.append(str(i.name()))
+            ifaces_macs.append(str(i.hardwareAddress()))
+        result, ok = QInputDialog.getItem(self, self.tr("Network Interfaces"), self.tr("Select your Interface:"),
+                                          ifaces_names, 0, True)
+        if ok:
+            self._iface = result
+            self._mac = ifaces_macs[ifaces_names.index(result)]
+        else:
+            QMessageBox.critical(self,TITLE,"You must select an interface card")
+            exit()
+
     def gso(self, *args, **kwargs):
         # Get Status output
         p = subprocess.Popen(*args, **kwargs)
@@ -69,7 +97,7 @@ class MainWidget(QMainWindow):
 
     def get_live_hosts(self):
 
-        (s_code, s_out) = subprocess.getstatusoutput("arp-scan --interface={} {}/24".format(self._iface,self._gw))
+        (s_code, s_out) = subprocess.getstatusoutput("arp-scan --interface={} {}/24".format(self._iface, self._gw))
 
         if s_code == 0:
             hosts = self.pat_arp.findall(s_out)
@@ -79,17 +107,17 @@ class MainWidget(QMainWindow):
         else:
             QMessageBox.critical(self, TITLE, s_out)
 
-    def populate_model(self,hosts):
+    def populate_model(self, hosts):
         self.hosts = hosts
         self.ui.tbl_hosts.setRowCount(len(hosts))
-        for i,host in enumerate(hosts):
-            self.ui.tbl_hosts.setItem(i,R_IP,QTableWidgetItem(host[0]))
-            self.ui.tbl_hosts.setItem(i,R_MAC,QTableWidgetItem(host[1]))
-            self.ui.tbl_hosts.setItem(i,R_MAC_MAN,QTableWidgetItem("Unknown"))
+        for i, host in enumerate(hosts):
+            self.ui.tbl_hosts.setItem(i, R_IP, QTableWidgetItem(host[0]))
+            self.ui.tbl_hosts.setItem(i, R_MAC, QTableWidgetItem(host[1]))
+            self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem("Unknown"))
             self.btn_cut = QPushButton("Cut")
             self.btn_cut.setIcon(QIcon("img/lan-connect.png"))
             self.btn_cut.clicked.connect(self.btn_cut_clicked)
-            self.ui.tbl_hosts.setCellWidget(i,R_STATUS,self.btn_cut)
+            self.ui.tbl_hosts.setCellWidget(i, R_STATUS, self.btn_cut)
 
         self.set_device_man()
 
@@ -115,12 +143,11 @@ class MainWidget(QMainWindow):
         f = open("/usr/share/nmap/nmap-mac-prefixes")
 
         for line in f.readlines():
-            for i,host in enumerate(self.hosts):
-                mac = host[1].replace(":","").upper()[:6]
+            for i, host in enumerate(self.hosts):
+                mac = host[1].replace(":", "").upper()[:6]
                 if line.startswith(mac):
-                    self.ui.tbl_hosts.setItem(i,R_MAC_MAN,QTableWidgetItem(line[7:]))
+                    self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem(line[7:]))
                     break
-
 
 
 def main():
