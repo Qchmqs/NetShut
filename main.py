@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 from PyQt5 import QtNetwork
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, QSettings
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
     QMainWindow, QInputDialog, QDesktopWidget
@@ -35,6 +35,7 @@ class CommandThread(QThread):
 class MainWidget(QMainWindow):
     def __init__(self):
         super(MainWidget, self).__init__()
+        self.settings = QSettings("IK","Netshut")
         self.th = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -107,14 +108,19 @@ class MainWidget(QMainWindow):
             ifaces_names.append(str(i.name()))
             ifaces_macs.append(str(i.hardwareAddress()))
 
-        result, ok = QInputDialog.getItem(self, self.tr("Network Interfaces"), self.tr("Select your Interface:"),
-                                          ifaces_names, 0, False)
-        if ok:
-            self._iface = result
-            self._mac = ifaces_macs[ifaces_names.index(result)]
+        if not self.settings.value("iface") or self.settings.value("iface") not in ifaces_names:
+            result, ok = QInputDialog.getItem(self, self.tr("Network Interfaces"), self.tr("Select your Interface:"),
+                                              ifaces_names, 0, False)
+            if ok:
+                self._iface = result
+                self._mac = ifaces_macs[ifaces_names.index(result)]
+                self.settings.setValue("iface",self._iface)
+            else:
+                QMessageBox.critical(self, TITLE, "You must select an interface card")
+                exit()
         else:
-            QMessageBox.critical(self, TITLE, "You must select an interface card")
-            exit()
+            self._iface = self.settings.value("iface")
+            self._mac = ifaces_macs[ifaces_names.index(self._iface)]
 
     def get_gateway(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip route list")
