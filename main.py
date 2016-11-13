@@ -42,13 +42,6 @@ class MainWidget(QMainWindow):
         self.init_ui()
         self.center()
 
-        self.ui.actionShow_Icons_Text.setData(Qt.ToolButtonTextUnderIcon)
-        self.ui.actionShow_Icons.setData(Qt.ToolButtonIconOnly)
-
-        group = QActionGroup(self)
-        group.addAction(self.ui.actionShow_Icons)
-        group.addAction(self.ui.actionShow_Icons_Text)
-        group.triggered.connect(self.act_toolbar_show)
 
         if int(self.settings.value("toolbar_show", Qt.ToolButtonIconOnly)) == Qt.ToolButtonIconOnly:
             self.ui.actionShow_Icons.setChecked(True)
@@ -83,6 +76,7 @@ class MainWidget(QMainWindow):
         self.ui.act_scan.trigger()
 
     def init_ui(self):
+        self.ui.action_Help.setIcon(QIcon("img/help-circle.png"))
         self.ui.action_About.triggered.connect(self.act_about_triggered)
         self.ui.act_scan.triggered.connect(self.act_scan_triggered)
         self.ui.act_scan.setIcon(QIcon("img/scan.png"))
@@ -97,6 +91,15 @@ class MainWidget(QMainWindow):
         self.ui.tbl_hosts.setColumnWidth(1, 150)
         self.ui.tbl_hosts.setColumnWidth(2, 240)
         self.ui.tbl_hosts.setShowGrid(False)
+
+        self.ui.actionShow_Icons_Text.setData(Qt.ToolButtonTextUnderIcon)
+        self.ui.actionShow_Icons.setData(Qt.ToolButtonIconOnly)
+
+        group = QActionGroup(self)
+        group.addAction(self.ui.actionShow_Icons)
+        group.addAction(self.ui.actionShow_Icons_Text)
+        group.triggered.connect(self.act_toolbar_show)
+
 
     def act_toolbar_show(self, action):
         self.settings.setValue("toolbar_show", action.data())
