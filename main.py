@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
+from pprint import pprint
 import re
 import subprocess
 import sys
@@ -206,23 +207,22 @@ class MainWidget(QMainWindow):
 
         return gw_ip
 
-    def populate_model(self, hosts):
-        self._hosts = hosts
-        self.ui.tbl_hosts.setRowCount(len(hosts))
-        for i, k in enumerate(hosts):
+    def populate_model(self):
+        self.ui.tbl_hosts.setRowCount(len(self._hosts))
+        for i, k in enumerate(self._hosts):
             item = QTableWidgetItem(k)
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
             self.ui.tbl_hosts.setItem(i, R_IP, item)
 
-            item = QTableWidgetItem(hosts[k])
+            item = QTableWidgetItem(self._hosts[k][0])
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
             self.ui.tbl_hosts.setItem(i, R_MAC, item)
 
-            item = QTableWidgetItem("Unknown")
+            item = QTableWidgetItem(self._hosts[k][1])
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
             self.ui.tbl_hosts.setItem(i, R_MAC_MAN, item)
 
-            self.ui.tbl_hosts.setItem(i, R_NAME, QTableWidgetItem(self._hosts_names.get(hosts[k], "Not Set")))
+            self.ui.tbl_hosts.setItem(i, R_NAME, QTableWidgetItem(self._hosts_names.get(self._hosts[k][0], "Not Set")))
 
             self.btn_cut = QPushButton("Cut")
             self.btn_cut.setCheckable(True)
@@ -231,16 +231,14 @@ class MainWidget(QMainWindow):
             self.btn_cut.clicked.connect(self.btn_cut_clicked)
             self.ui.tbl_hosts.setCellWidget(i, R_STATUS, self.btn_cut)
 
-        self.set_device_man()
-
     def set_device_man(self):
         f = open("/usr/share/nmap/nmap-mac-prefixes")
 
         for line in f.readlines():
             for i, k in enumerate(self._hosts):
-                mac = self._hosts[k].replace(":", "").upper()[:6]
+                mac = self._hosts[k][0].replace(":", "").upper()[:6]
                 if line.startswith(mac):
-                    self.ui.tbl_hosts.item(i, R_MAC_MAN).setText(line[7:])
+                    self._hosts[k][1] = line[7:]
                     break
         f.close()
 
@@ -277,7 +275,10 @@ class MainWidget(QMainWindow):
             # Remove gateway from list
             del hosts[self._gw]
 
-            self.populate_model(hosts)
+            self._hosts = hosts
+            self._hosts = {k: [v, "Unknown"] for k, v in self._hosts.items()}
+            self.set_device_man()
+            self.populate_model()
             self.ui.lbl_gw.setText("<b>{} ({})</b>".format(self._gw, self.get_device_name(self._gw_mac)))
             self.ui.lbl_mac.setText("<b>{} ({})</b>".format(self._mac, self.get_device_name(self._mac)))
         else:
