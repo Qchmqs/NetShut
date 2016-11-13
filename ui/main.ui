@@ -112,12 +112,22 @@
     </property>
     <widget class="QMenu" name="menuToolbar">
      <property name="title">
-      <string>Toolbar</string>
+      <string>&amp;Toolbar</string>
      </property>
      <addaction name="actionShow_Icons"/>
      <addaction name="actionShow_Icons_Text"/>
     </widget>
+    <widget class="QMenu" name="menuShow">
+     <property name="title">
+      <string>&amp;Show</string>
+     </property>
+     <addaction name="actionIP_Address"/>
+     <addaction name="actionMAC_Address"/>
+     <addaction name="actionDevice_Manifacturer"/>
+     <addaction name="actionCustom_Name"/>
+    </widget>
     <addaction name="menuToolbar"/>
+    <addaction name="menuShow"/>
    </widget>
    <addaction name="menu_Operations"/>
    <addaction name="menuSettings"/>
@@ -171,7 +181,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Icons</string>
+    <string>&amp;Show Icons</string>
    </property>
   </action>
   <action name="actionShow_Icons_Text">
@@ -179,7 +189,51 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Icons &amp;&amp; Text</string>
+    <string>Show &amp;Icons &amp;&amp; Text</string>
+   </property>
+  </action>
+  <action name="actionIP_Address">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;IP Address</string>
+   </property>
+  </action>
+  <action name="actionMAC_Address">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;MAC Address</string>
+   </property>
+  </action>
+  <action name="actionDevice_Manifacturer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Device Manifacturer</string>
+   </property>
+  </action>
+  <action name="actionCustom_Name">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Custom Name</string>
    </property>
   </action>
  </widget>

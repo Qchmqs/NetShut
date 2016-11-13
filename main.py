@@ -44,8 +44,6 @@ class MainWidget(QMainWindow):
         self.init_ui()
         self.center()
 
-
-
         # Compile Re's
         self._pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
         self._pat_gip = re.compile("inet\s(.+)/")
@@ -106,10 +104,34 @@ class MainWidget(QMainWindow):
         self.ui.actionShow_Icons_Text.setData(Qt.ToolButtonTextUnderIcon)
         self.ui.actionShow_Icons.setData(Qt.ToolButtonIconOnly)
 
+        self.ui.actionCustom_Name.setData(R_NAME)
+        self.ui.actionIP_Address.setData(R_IP)
+        self.ui.actionMAC_Address.setData(R_MAC)
+        self.ui.actionDevice_Manifacturer.setData(R_MAC_MAN)
+
+        self.ui.actionCustom_Name.setChecked(self.settings.value("tbl_show_{}".format(R_NAME), 1, type=int))
+        self.ui.actionIP_Address.setChecked(self.settings.value("tbl_show_{}".format(R_IP), 1, type=int))
+        self.ui.actionMAC_Address.setChecked(self.settings.value("tbl_show_{}".format(R_MAC), 1, type=int))
+        self.ui.actionDevice_Manifacturer.setChecked(self.settings.value("tbl_show_{}".format(R_MAC_MAN), 1, type=int))
+
         group = QActionGroup(self)
         group.addAction(self.ui.actionShow_Icons)
         group.addAction(self.ui.actionShow_Icons_Text)
         group.triggered.connect(self.act_toolbar_show)
+
+        group2 = QActionGroup(self)
+        group2.setExclusive(False)
+        group2.addAction(self.ui.actionCustom_Name)
+        group2.addAction(self.ui.actionIP_Address)
+        group2.addAction(self.ui.actionMAC_Address)
+        group2.addAction(self.ui.actionDevice_Manifacturer)
+        group2.triggered.connect(self.act_setting_show)
+
+        for a in group2.actions():
+            if a.isChecked():
+                self.ui.tbl_hosts.showColumn(a.data())
+            else:
+                self.ui.tbl_hosts.hideColumn(a.data())
 
         if int(self.settings.value("toolbar_show", Qt.ToolButtonIconOnly)) == Qt.ToolButtonIconOnly:
             self.ui.actionShow_Icons.setChecked(True)
@@ -122,6 +144,14 @@ class MainWidget(QMainWindow):
     def hosts_item_changed(self, item):
         if item.column() == R_NAME and not item.text() == "Not Set":
             self._hosts_names[self.ui.tbl_hosts.item(item.row(), R_MAC).text()] = item.text()
+
+    def act_setting_show(self, action):
+        a = "tbl_show_{}".format(action.data())
+        self.settings.setValue(a, int(action.isChecked()))
+        if action.isChecked():
+            self.ui.tbl_hosts.showColumn(action.data())
+        else:
+            self.ui.tbl_hosts.hideColumn(action.data())
 
     def act_toolbar_show(self, action):
         self.settings.setValue("toolbar_show", action.data())
@@ -284,7 +314,7 @@ class MainWidget(QMainWindow):
         self._cut_hosts[ip] = [po1, po2]
         return True
 
-    def resume_host(self,index):
+    def resume_host(self, index):
         ip = self.ui.tbl_hosts.item(index.row(), R_IP).text()
         if ip in self._cut_hosts.keys():
             for p in self._cut_hosts[ip]:
