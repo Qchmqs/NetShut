@@ -63,11 +63,6 @@ class MainWidget(QMainWindow):
 
         self.cutall = True
 
-        # TODO Remove after ui complete
-        self.populate_model([('192.168.1.1', '5c:f9:6a:23:7c:1a'), ('192.168.1.13', '00:2d:00:06:a0:2f'),
-                             ('192.168.1.10', 'd0:6f:4a:61:9b:06'), ('192.168.1.11', '94:35:0a:ef:86:4d'),
-                             ('192.168.1.12', '30:19:66:71:49:6f')])
-
     def init_ui(self):
         self.ui.action_About.triggered.connect(self.act_about_triggered)
         self.ui.act_scan.triggered.connect(self.act_scan_triggered)
