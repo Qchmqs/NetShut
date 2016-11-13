@@ -52,12 +52,15 @@ class MainWidget(QMainWindow):
         self._ip = ""
 
         self.prompt_iface()
+
         self.get_ip()
 
         self.ui.lbl_gw.setText("<b>{}</b>".format(self._gw))
         self.ui.lbl_mac.setText("<b>{}</b>".format(self._mac))
         self.ui.lbl_ip.setText("<b>{}</b>".format(self._ip))
         self.ui.lbl_iface.setText("<b>{}</b>".format(self._iface))
+
+        self.cutall = True
 
         # TODO Remove after ui complete
         self.populate_model([('192.168.1.1', '5c:f9:6a:23:7c:1a'), ('192.168.1.13', '00:2d:00:06:a0:2f'),
@@ -68,7 +71,8 @@ class MainWidget(QMainWindow):
         self.ui.action_About.triggered.connect(self.act_about_triggered)
         self.ui.act_scan.triggered.connect(self.act_scan_triggered)
         self.ui.act_scan.setIcon(QIcon("img/scan.png"))
-        self.ui.act_cut.setIcon(QIcon("img/lan-disconnect.png"))
+        self.ui.act_cut.setIcon(QIcon("img/cut_all.png"))
+        self.ui.act_cut.triggered.connect(self.act_cutall_triggered)
         self.ui.tbl_hosts.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.tbl_hosts.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.tbl_hosts.verticalHeader().setVisible(False)
@@ -78,6 +82,14 @@ class MainWidget(QMainWindow):
         self.ui.tbl_hosts.setColumnWidth(1, 150)
         self.ui.tbl_hosts.setColumnWidth(2, 240)
         self.ui.tbl_hosts.setShowGrid(False)
+
+    def act_cutall_triggered(self):
+        if self.cutall:
+            self.cutall = False
+            self.ui.act_cut.setIcon(QIcon("img/uncut_all.png"))
+        else:
+            self.cutall = True
+            self.ui.act_cut.setIcon(QIcon("img/cut_all.png"))
 
     def get_ip(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip addr show {}".format(self._iface))
@@ -113,9 +125,6 @@ class MainWidget(QMainWindow):
             exit()
 
         return gw_ip
-
-    def get_live_hosts(self):
-        pass
 
     def populate_model(self, hosts):
         self.hosts = hosts
