@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 import re
 import subprocess
 import sys
 
+import json
 from PyQt5 import QtNetwork
 from PyQt5.QtCore import QThread, pyqtSignal, QSettings, Qt
 from PyQt5.QtGui import QIcon
@@ -13,8 +15,8 @@ from about import AboutDialog
 
 from ui.main_ui import Ui_MainWindow
 
-TABLE_COLUMN_COUNT = 4
-R_IP, R_MAC, R_MAC_MAN, R_STATUS = range(TABLE_COLUMN_COUNT)
+TABLE_COLUMN_COUNT = 5
+R_IP, R_MAC, R_MAC_MAN, R_NAME, R_STATUS = range(TABLE_COLUMN_COUNT)
 
 VERSION = 0.1
 TITLE = "Netshut {}".format(VERSION)
@@ -54,7 +56,8 @@ class MainWidget(QMainWindow):
         self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
         self.pat_gip = re.compile("inet\s(.+)/")
 
-        self.hosts = []
+        self.hosts = {}
+        self.hosts_names = {}
         self._gw = self.get_gateway()
         self._gw_mac = ""
         self._iface = "wlp2s0"
@@ -72,7 +75,20 @@ class MainWidget(QMainWindow):
 
         self.cutall = True
 
+        self.open_config_file()
         self.ui.act_scan.trigger()
+
+    def open_config_file(self):
+        if os.path.exists("config"):
+            f = open("config")
+            self.hosts_names = json.load(f)
+            f.close()
+
+    def closeEvent(self,event):
+        f = open("config",mode="w")
+        json.dump(self.hosts_names,f)
+        f.close()
+        event.accept()
 
     def init_ui(self):
         self.setWindowIcon(QIcon("img/icon.png"))
@@ -83,14 +99,16 @@ class MainWidget(QMainWindow):
         self.ui.act_cut.setIcon(QIcon("img/cut_all.png"))
         self.ui.act_cut.triggered.connect(self.act_cutall_triggered)
         self.ui.tbl_hosts.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.ui.tbl_hosts.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.tbl_hosts.verticalHeader().setVisible(False)
         self.ui.tbl_hosts.setColumnCount(TABLE_COLUMN_COUNT)
-        self.ui.tbl_hosts.setHorizontalHeaderLabels(["IP Address", "MAC Address", "Device Manufacturer", "Status"])
+        self.ui.tbl_hosts.setHorizontalHeaderLabels(
+            ["IP Address", "MAC Address", "Device Manufacturer", "Custom Name", "Status"])
         self.ui.tbl_hosts.setColumnWidth(0, 100)
-        self.ui.tbl_hosts.setColumnWidth(1, 150)
+        self.ui.tbl_hosts.setColumnWidth(1, 100)
         self.ui.tbl_hosts.setColumnWidth(2, 240)
+        self.ui.tbl_hosts.setColumnWidth(3, 100)
         self.ui.tbl_hosts.setShowGrid(False)
+        self.ui.tbl_hosts.itemChanged.connect(self.hosts_item_changed)
 
         self.ui.actionShow_Icons_Text.setData(Qt.ToolButtonTextUnderIcon)
         self.ui.actionShow_Icons.setData(Qt.ToolButtonIconOnly)
@@ -99,6 +117,11 @@ class MainWidget(QMainWindow):
         group.addAction(self.ui.actionShow_Icons)
         group.addAction(self.ui.actionShow_Icons_Text)
         group.triggered.connect(self.act_toolbar_show)
+
+    def hosts_item_changed(self, item):
+        if item.column() == R_NAME and not item.text() == "Not Set":
+            self.hosts_names[self.ui.tbl_hosts.item(item.row(),R_MAC).text()] = item.text()
+
 
     def act_toolbar_show(self, action):
         self.settings.setValue("toolbar_show", action.data())
@@ -158,9 +181,20 @@ class MainWidget(QMainWindow):
         self.hosts = hosts
         self.ui.tbl_hosts.setRowCount(len(hosts))
         for i, k in enumerate(hosts):
-            self.ui.tbl_hosts.setItem(i, R_IP, QTableWidgetItem(k))
-            self.ui.tbl_hosts.setItem(i, R_MAC, QTableWidgetItem(hosts[k]))
-            self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem("Unknown"))
+            item = QTableWidgetItem(k)
+            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+            self.ui.tbl_hosts.setItem(i, R_IP, item)
+
+            item = QTableWidgetItem(hosts[k])
+            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+            self.ui.tbl_hosts.setItem(i, R_MAC, item)
+
+            item = QTableWidgetItem("Unknown")
+            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+            self.ui.tbl_hosts.setItem(i, R_MAC_MAN, item)
+
+            self.ui.tbl_hosts.setItem(i, R_NAME, QTableWidgetItem(self.hosts_names.get(hosts[k],"Not Set")))
+
             self.btn_cut = QPushButton("Cut")
             self.btn_cut.setCheckable(True)
             self.btn_cut.setChecked(False)
@@ -177,7 +211,7 @@ class MainWidget(QMainWindow):
             for i, k in enumerate(self.hosts):
                 mac = self.hosts[k].replace(":", "").upper()[:6]
                 if line.startswith(mac):
-                    self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem(line[7:]))
+                    self.ui.tbl_hosts.item(i, R_MAC_MAN).setText(line[7:])
                     break
         f.close()
 
