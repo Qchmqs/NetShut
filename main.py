@@ -171,6 +171,7 @@ class MainWidget(QMainWindow):
 
     def act_scan_triggered(self):
         self.ui.tbl_hosts.clearContents()
+        self.ui.tbl_hosts.setRowCount(0)
         self.ui.act_scan.setEnabled(False)
         self.ui.statusbar.showMessage("Scanning")
         ct = CommandThread("arp-scan --interface={} {}/24".format(self._iface, self._gw), self)
@@ -205,6 +206,7 @@ class MainWidget(QMainWindow):
         index = self.ui.tbl_hosts.indexAt(button.pos())
 
         if index.isValid():
+            self.ui.tbl_hosts.selectRow(index.row())
             if button.isChecked():
                 button.setText("&Uncut")
                 button.setIcon(QIcon("img/lan-disconnect.png"))
