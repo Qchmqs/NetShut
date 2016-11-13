@@ -42,7 +42,6 @@ class MainWidget(QMainWindow):
         self.init_ui()
         self.center()
 
-
         if int(self.settings.value("toolbar_show", Qt.ToolButtonIconOnly)) == Qt.ToolButtonIconOnly:
             self.ui.actionShow_Icons.setChecked(True)
             self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonIconOnly)
@@ -76,6 +75,7 @@ class MainWidget(QMainWindow):
         self.ui.act_scan.trigger()
 
     def init_ui(self):
+        self.setWindowIcon(QIcon("img/icon.png"))
         self.ui.action_Help.setIcon(QIcon("img/help-circle.png"))
         self.ui.action_About.triggered.connect(self.act_about_triggered)
         self.ui.act_scan.triggered.connect(self.act_scan_triggered)
@@ -99,7 +99,6 @@ class MainWidget(QMainWindow):
         group.addAction(self.ui.actionShow_Icons)
         group.addAction(self.ui.actionShow_Icons_Text)
         group.triggered.connect(self.act_toolbar_show)
-
 
     def act_toolbar_show(self, action):
         self.settings.setValue("toolbar_show", action.data())
