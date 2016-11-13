@@ -35,7 +35,7 @@ class CommandThread(QThread):
 class MainWidget(QMainWindow):
     def __init__(self):
         super(MainWidget, self).__init__()
-        self.settings = QSettings("IK","Netshut")
+        self.settings = QSettings("IK", "Netshut")
         self.th = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -48,6 +48,7 @@ class MainWidget(QMainWindow):
 
         self.hosts = []
         self._gw = self.get_gateway()
+        self._gw_mac = ""
         self._iface = "wlp2s0"
         self._mac = ""
         self._ip = ""
@@ -111,7 +112,7 @@ class MainWidget(QMainWindow):
             if ok:
                 self._iface = result
                 self._mac = ifaces_macs[ifaces_names.index(result)]
-                self.settings.setValue("iface",self._iface)
+                self.settings.setValue("iface", self._iface)
             else:
                 QMessageBox.critical(self, TITLE, "You must select an interface card")
                 exit()
@@ -132,9 +133,9 @@ class MainWidget(QMainWindow):
     def populate_model(self, hosts):
         self.hosts = hosts
         self.ui.tbl_hosts.setRowCount(len(hosts))
-        for i, host in enumerate(hosts):
-            self.ui.tbl_hosts.setItem(i, R_IP, QTableWidgetItem(host[0]))
-            self.ui.tbl_hosts.setItem(i, R_MAC, QTableWidgetItem(host[1]))
+        for i,k in enumerate(hosts):
+            self.ui.tbl_hosts.setItem(i, R_IP, QTableWidgetItem(k))
+            self.ui.tbl_hosts.setItem(i, R_MAC, QTableWidgetItem(hosts[k]))
             self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem("Unknown"))
             self.btn_cut = QPushButton("Cut")
             self.btn_cut.setCheckable(True)
@@ -149,11 +150,24 @@ class MainWidget(QMainWindow):
         f = open("/usr/share/nmap/nmap-mac-prefixes")
 
         for line in f.readlines():
-            for i, host in enumerate(self.hosts):
-                mac = host[1].replace(":", "").upper()[:6]
+            for i, k in enumerate(self.hosts):
+                mac = self.hosts[k].replace(":", "").upper()[:6]
                 if line.startswith(mac):
                     self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem(line[7:]))
                     break
+        f.close()
+
+    def get_device_name(self,mac):
+        f = open("/usr/share/nmap/nmap-mac-prefixes")
+
+        for line in f.readlines():
+                mac = mac.replace(":", "").upper()[:6]
+                if line.startswith(mac):
+                    f.close()
+                    return line[7:]
+        else:
+            f.close()
+            return ""
 
     def act_scan_triggered(self):
         self.ui.tbl_hosts.clearContents()
@@ -169,9 +183,15 @@ class MainWidget(QMainWindow):
     def scan_completed(self, s_code, s_out):
         if s_code == 0:
             hosts = self.pat_arp.findall(s_out)
+            # Get gatway mac address
+            hosts = dict(hosts)
+            self._gw_mac = hosts[self._gw]
             # Remove gateway from list
-            hosts = [i for i in hosts if not i[0] == self._gw]
+            del hosts[self._gw]
+
             self.populate_model(hosts)
+            self.ui.lbl_gw.setText("<b>{} ({})</b>".format(self._gw,self.get_device_name(self._gw_mac)))
+            self.ui.lbl_mac.setText("<b>{} ({})</b>".format(self._mac,self.get_device_name(self._mac)))
         else:
             QMessageBox.critical(self, TITLE, s_out)
 
