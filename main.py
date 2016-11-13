@@ -5,10 +5,10 @@ import subprocess
 import sys
 
 from PyQt5 import QtNetwork
-from PyQt5.QtCore import QThread, pyqtSignal, QSettings
+from PyQt5.QtCore import QThread, pyqtSignal, QSettings, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
-    QMainWindow, QInputDialog, QDesktopWidget
+    QMainWindow, QInputDialog, QDesktopWidget, QActionGroup
 from about import AboutDialog
 
 from ui.main_ui import Ui_MainWindow
@@ -42,6 +42,22 @@ class MainWidget(QMainWindow):
         self.init_ui()
         self.center()
 
+        self.ui.actionShow_Icons_Text.setData(Qt.ToolButtonTextUnderIcon)
+        self.ui.actionShow_Icons.setData(Qt.ToolButtonIconOnly)
+
+        group = QActionGroup(self)
+        group.addAction(self.ui.actionShow_Icons)
+        group.addAction(self.ui.actionShow_Icons_Text)
+        group.triggered.connect(self.act_toolbar_show)
+
+        if int(self.settings.value("toolbar_show", Qt.ToolButtonIconOnly)) == Qt.ToolButtonIconOnly:
+            self.ui.actionShow_Icons.setChecked(True)
+            self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+
+        else:
+            self.ui.actionShow_Icons_Text.setChecked(True)
+            self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+
         # Compile Re's
         self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
         self.pat_gip = re.compile("inet\s(.+)/")
@@ -64,6 +80,8 @@ class MainWidget(QMainWindow):
 
         self.cutall = True
 
+        self.ui.act_scan.trigger()
+
     def init_ui(self):
         self.ui.action_About.triggered.connect(self.act_about_triggered)
         self.ui.act_scan.triggered.connect(self.act_scan_triggered)
@@ -79,6 +97,10 @@ class MainWidget(QMainWindow):
         self.ui.tbl_hosts.setColumnWidth(1, 150)
         self.ui.tbl_hosts.setColumnWidth(2, 240)
         self.ui.tbl_hosts.setShowGrid(False)
+
+    def act_toolbar_show(self, action):
+        self.settings.setValue("toolbar_show", action.data())
+        self.ui.toolBar.setToolButtonStyle(action.data())
 
     def act_cutall_triggered(self):
         if self.cutall:
@@ -133,7 +155,7 @@ class MainWidget(QMainWindow):
     def populate_model(self, hosts):
         self.hosts = hosts
         self.ui.tbl_hosts.setRowCount(len(hosts))
-        for i,k in enumerate(hosts):
+        for i, k in enumerate(hosts):
             self.ui.tbl_hosts.setItem(i, R_IP, QTableWidgetItem(k))
             self.ui.tbl_hosts.setItem(i, R_MAC, QTableWidgetItem(hosts[k]))
             self.ui.tbl_hosts.setItem(i, R_MAC_MAN, QTableWidgetItem("Unknown"))
@@ -157,14 +179,14 @@ class MainWidget(QMainWindow):
                     break
         f.close()
 
-    def get_device_name(self,mac):
+    def get_device_name(self, mac):
         f = open("/usr/share/nmap/nmap-mac-prefixes")
 
         for line in f.readlines():
-                mac = mac.replace(":", "").upper()[:6]
-                if line.startswith(mac):
-                    f.close()
-                    return line[7:]
+            mac = mac.replace(":", "").upper()[:6]
+            if line.startswith(mac):
+                f.close()
+                return line[7:]
         else:
             f.close()
             return ""
@@ -191,8 +213,8 @@ class MainWidget(QMainWindow):
             del hosts[self._gw]
 
             self.populate_model(hosts)
-            self.ui.lbl_gw.setText("<b>{} ({})</b>".format(self._gw,self.get_device_name(self._gw_mac)))
-            self.ui.lbl_mac.setText("<b>{} ({})</b>".format(self._mac,self.get_device_name(self._mac)))
+            self.ui.lbl_gw.setText("<b>{} ({})</b>".format(self._gw, self.get_device_name(self._gw_mac)))
+            self.ui.lbl_mac.setText("<b>{} ({})</b>".format(self._mac, self.get_device_name(self._mac)))
         else:
             QMessageBox.critical(self, TITLE, s_out)
 

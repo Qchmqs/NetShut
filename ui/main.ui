@@ -106,7 +106,21 @@
     <addaction name="action_Help"/>
     <addaction name="action_About"/>
    </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settin&amp;gs</string>
+    </property>
+    <widget class="QMenu" name="menuToolbar">
+     <property name="title">
+      <string>Toolbar</string>
+     </property>
+     <addaction name="actionShow_Icons"/>
+     <addaction name="actionShow_Icons_Text"/>
+    </widget>
+    <addaction name="menuToolbar"/>
+   </widget>
    <addaction name="menu_Operations"/>
+   <addaction name="menuSettings"/>
    <addaction name="menu_Help"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -150,6 +164,22 @@
   <action name="action_About">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionShow_Icons">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Icons</string>
+   </property>
+  </action>
+  <action name="actionShow_Icons_Text">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Icons &amp;&amp; Text</string>
    </property>
   </action>
  </widget>
