@@ -44,29 +44,22 @@ class MainWidget(QMainWindow):
         self.init_ui()
         self.center()
 
-        if int(self.settings.value("toolbar_show", Qt.ToolButtonIconOnly)) == Qt.ToolButtonIconOnly:
-            self.ui.actionShow_Icons.setChecked(True)
-            self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonIconOnly)
 
-        else:
-            self.ui.actionShow_Icons_Text.setChecked(True)
-            self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 
         # Compile Re's
-        self.pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
-        self.pat_gip = re.compile("inet\s(.+)/")
+        self._pat_arp = re.compile("^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\S+)", re.MULTILINE)
+        self._pat_gip = re.compile("inet\s(.+)/")
 
-        self.hosts = {}
-        self.hosts_names = {}
+        self._cut_hosts = {}
+        self._hosts = {}
+        self._hosts_names = {}
         self._gw = self.get_gateway()
         self._gw_mac = ""
         self._iface = "wlp2s0"
         self._mac = ""
-        self._ip = ""
+        self._ip = self.get_ip()
 
         self.prompt_iface()
-
-        self.get_ip()
 
         self.ui.lbl_gw.setText("<b>{}</b>".format(self._gw))
         self.ui.lbl_mac.setText("<b>{}</b>".format(self._mac))
@@ -81,12 +74,12 @@ class MainWidget(QMainWindow):
     def open_config_file(self):
         if os.path.exists("config"):
             f = open("config")
-            self.hosts_names = json.load(f)
+            self._hosts_names = json.load(f)
             f.close()
 
-    def closeEvent(self,event):
-        f = open("config",mode="w")
-        json.dump(self.hosts_names,f)
+    def closeEvent(self, event):
+        f = open("config", mode="w")
+        json.dump(self._hosts_names, f)
         f.close()
         event.accept()
 
@@ -118,10 +111,17 @@ class MainWidget(QMainWindow):
         group.addAction(self.ui.actionShow_Icons_Text)
         group.triggered.connect(self.act_toolbar_show)
 
+        if int(self.settings.value("toolbar_show", Qt.ToolButtonIconOnly)) == Qt.ToolButtonIconOnly:
+            self.ui.actionShow_Icons.setChecked(True)
+            self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+
+        else:
+            self.ui.actionShow_Icons_Text.setChecked(True)
+            self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+
     def hosts_item_changed(self, item):
         if item.column() == R_NAME and not item.text() == "Not Set":
-            self.hosts_names[self.ui.tbl_hosts.item(item.row(),R_MAC).text()] = item.text()
-
+            self._hosts_names[self.ui.tbl_hosts.item(item.row(), R_MAC).text()] = item.text()
 
     def act_toolbar_show(self, action):
         self.settings.setValue("toolbar_show", action.data())
@@ -140,10 +140,9 @@ class MainWidget(QMainWindow):
     def get_ip(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip addr show {}".format(self._iface))
         try:
-            self._ip = self.pat_gip.findall(s_out)[0]
+            return self._pat_gip.findall(s_out)[0]
         except IndexError:
-            print("COULD NOT GET IP")
-            exit()
+            return ""
 
     def prompt_iface(self):
         ifaces_names = []
@@ -178,7 +177,7 @@ class MainWidget(QMainWindow):
         return gw_ip
 
     def populate_model(self, hosts):
-        self.hosts = hosts
+        self._hosts = hosts
         self.ui.tbl_hosts.setRowCount(len(hosts))
         for i, k in enumerate(hosts):
             item = QTableWidgetItem(k)
@@ -193,7 +192,7 @@ class MainWidget(QMainWindow):
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
             self.ui.tbl_hosts.setItem(i, R_MAC_MAN, item)
 
-            self.ui.tbl_hosts.setItem(i, R_NAME, QTableWidgetItem(self.hosts_names.get(hosts[k],"Not Set")))
+            self.ui.tbl_hosts.setItem(i, R_NAME, QTableWidgetItem(self._hosts_names.get(hosts[k], "Not Set")))
 
             self.btn_cut = QPushButton("Cut")
             self.btn_cut.setCheckable(True)
@@ -208,8 +207,8 @@ class MainWidget(QMainWindow):
         f = open("/usr/share/nmap/nmap-mac-prefixes")
 
         for line in f.readlines():
-            for i, k in enumerate(self.hosts):
-                mac = self.hosts[k].replace(":", "").upper()[:6]
+            for i, k in enumerate(self._hosts):
+                mac = self._hosts[k].replace(":", "").upper()[:6]
                 if line.startswith(mac):
                     self.ui.tbl_hosts.item(i, R_MAC_MAN).setText(line[7:])
                     break
@@ -241,7 +240,7 @@ class MainWidget(QMainWindow):
 
     def scan_completed(self, s_code, s_out):
         if s_code == 0:
-            hosts = self.pat_arp.findall(s_out)
+            hosts = self._pat_arp.findall(s_out)
             # Get gatway mac address
             hosts = dict(hosts)
             self._gw_mac = hosts[self._gw]
@@ -266,11 +265,33 @@ class MainWidget(QMainWindow):
         if index.isValid():
             self.ui.tbl_hosts.selectRow(index.row())
             if button.isChecked():
-                button.setText("&Uncut")
-                button.setIcon(QIcon("img/lan-disconnect.png"))
+                status = self.cut_host(index)
+                if status:
+                    button.setText("&Uncut")
+                    button.setIcon(QIcon("img/lan-disconnect.png"))
             else:
-                button.setText("&Cut")
-                button.setIcon(QIcon("img/lan-connect.png"))
+                status = self.resume_host(index)
+                if status:
+                    button.setText("&Cut")
+                    button.setIcon(QIcon("img/lan-connect.png"))
+
+    def cut_host(self, index):
+        ip = self.ui.tbl_hosts.item(index.row(), R_IP).text()
+        po1 = subprocess.Popen(["arpspoof", "-i", self._iface, "-t", self._gw, ip], stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=False)
+        po2 = subprocess.Popen(["arpspoof", "-i", self._iface, "-t", ip, self._gw], stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=False)
+        self._cut_hosts[ip] = [po1, po2]
+        return True
+
+    def resume_host(self,index):
+        ip = self.ui.tbl_hosts.item(index.row(), R_IP).text()
+        if ip in self._cut_hosts.keys():
+            for p in self._cut_hosts[ip]:
+                p.terminate()
+                p.kill()
+        del self._cut_hosts[ip]
+        return True
 
     def center(self):
         qr = self.frameGeometry()
