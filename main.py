@@ -88,9 +88,11 @@ class MainWidget(QMainWindow):
         if self.cutall:
             self.cutall = False
             self.ui.act_cut.setIcon(QIcon("img/uncut_all.png"))
+            self.ui.act_cut.setText("Resume All")
         else:
             self.cutall = True
             self.ui.act_cut.setIcon(QIcon("img/cut_all.png"))
+            self.ui.act_cut.setText("Cut All")
 
     def get_ip(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip addr show {}".format(self._iface))
@@ -172,6 +174,8 @@ class MainWidget(QMainWindow):
     def scan_completed(self, s_code, s_out):
         if s_code == 0:
             hosts = self.pat_arp.findall(s_out)
+            # Remove gateway from list
+            hosts = [i for i in hosts if not i[0] == self._gw]
             self.populate_model(hosts)
         else:
             QMessageBox.critical(self, TITLE, s_out)
