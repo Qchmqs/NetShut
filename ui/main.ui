@@ -222,7 +222,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>&amp;Device Manifacturer</string>
+    <string>&amp;Device Manufacturer</string>
    </property>
   </action>
   <action name="actionCustom_Name">
