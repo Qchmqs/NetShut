@@ -279,6 +279,7 @@ class MainWidget(QMainWindow):
             self._hosts = {k: [v, "Unknown"] for k, v in self._hosts.items()}
             self.set_device_man()
             self.populate_model()
+            self.ui.tbl_hosts.resizeColumnsToContents()
             self.ui.lbl_gw.setText("<b>{} ({})</b>".format(self._gw, self.get_device_name(self._gw_mac)))
             self.ui.lbl_mac.setText("<b>{} ({})</b>".format(self._mac, self.get_device_name(self._mac)))
         else:
