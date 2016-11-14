@@ -69,7 +69,7 @@ class MainWidget(QMainWindow):
         self.ui.lbl_ip.setText("<b>{}</b>".format(self._ip))
         self.ui.lbl_iface.setText("<b>{}</b>".format(self._iface))
 
-        self.cutall = True
+        self.cut_all = False
 
         self.open_config_file()
         self.ui.act_scan.trigger()
@@ -164,14 +164,26 @@ class MainWidget(QMainWindow):
         self.ui.toolBar.setToolButtonStyle(action.data())
 
     def act_cutall_triggered(self):
-        if self.cutall:
-            self.cutall = False
-            self.ui.act_cut.setIcon(QIcon("img/uncut_all.png"))
-            self.ui.act_cut.setText("Resume All")
-        else:
-            self.cutall = True
+        if self.cut_all:
+            # Resume all hosts
+            self.resume_all_hosts()
+
+            self.cut_all = False
             self.ui.act_cut.setIcon(QIcon("img/cut_all.png"))
             self.ui.act_cut.setText("Cut All")
+        else:
+            # Cut all hosts
+            self.cut_all_hosts()
+
+            self.cut_all = True
+            self.ui.act_cut.setIcon(QIcon("img/uncut_all.png"))
+            self.ui.act_cut.setText("Resume All")
+
+    def resume_all_hosts(self):
+        pass
+
+    def cut_all_hosts(self):
+        pass
 
     def get_ip(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip addr show {}".format(self._iface))
@@ -264,7 +276,7 @@ class MainWidget(QMainWindow):
         self.ui.tbl_hosts.setRowCount(0)
         self.ui.act_scan.setEnabled(False)
         self.ui.statusbar.showMessage("Scanning")
-        ct = CommandThread("{} --interface={} {}/24".format(CMD_ARPSCAN,self._iface, self._gw), self)
+        ct = CommandThread("{} --interface={} {}/24".format(CMD_ARPSCAN, self._iface, self._gw), self)
         ct.results.connect(self.scan_completed)
         ct.start()
 
@@ -303,19 +315,19 @@ class MainWidget(QMainWindow):
 
         if index.isValid():
             self.ui.tbl_hosts.selectRow(index.row())
+            ip = self.ui.tbl_hosts.item(index.row(), R_IP).text()
             if button.isChecked():
-                status = self.cut_host(index)
+                status = self.cut_host(ip)
                 if status:
                     button.setText("&Uncut")
                     button.setIcon(QIcon("img/lan-disconnect.png"))
             else:
-                status = self.resume_host(index)
+                status = self.resume_host(ip)
                 if status:
                     button.setText("&Cut")
                     button.setIcon(QIcon("img/lan-connect.png"))
 
-    def cut_host(self, index):
-        ip = self.ui.tbl_hosts.item(index.row(), R_IP).text()
+    def cut_host(self, ip):
         po1 = subprocess.Popen([CMD_ARPSPOOF, "-i", self._iface, "-t", self._gw, ip], stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=False)
         po2 = subprocess.Popen([CMD_ARPSPOOF, "-i", self._iface, "-t", ip, self._gw], stdout=subprocess.PIPE,
@@ -323,8 +335,7 @@ class MainWidget(QMainWindow):
         self._cut_hosts[ip] = [po1, po2]
         return True
 
-    def resume_host(self, index):
-        ip = self.ui.tbl_hosts.item(index.row(), R_IP).text()
+    def resume_host(self, ip):
         if ip in self._cut_hosts.keys():
             for p in self._cut_hosts[ip]:
                 p.terminate()
