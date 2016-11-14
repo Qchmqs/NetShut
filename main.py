@@ -3,6 +3,7 @@
 import os
 from pprint import pprint
 import re
+import shutil
 import subprocess
 import sys
 
@@ -21,6 +22,9 @@ R_IP, R_MAC, R_MAC_MAN, R_NAME, R_STATUS = range(TABLE_COLUMN_COUNT)
 
 VERSION = 0.1
 TITLE = "Netshut {}".format(VERSION)
+
+ARPSPOOF = ""
+ARPSCAN = ""
 
 
 class CommandThread(QThread):
@@ -339,9 +343,18 @@ def main():
     app = QApplication(sys.argv)
 
     if os.getuid():
-        QMessageBox.critical(None,"Error","You must be root to run this program")
+        QMessageBox.critical(None, "Error", "You must be root to run this program")
         print("You must be root to run this program")
         exit(1)
+
+    CMD_ARPSCAN = shutil.which("arp-scan")
+    CMD_ARPSPOOF = shutil.which("arpspoof")
+
+    if not (CMD_ARPSCAN and CMD_ARPSPOOF):
+        QMessageBox.critical(None, "Error", "This program requires the following utilities:\narpspoof\narp-scan")
+        print("This program requires the following utilities:\narpspoof\narp-scan")
+        exit(2)
+
 
 
     w = MainWidget()
