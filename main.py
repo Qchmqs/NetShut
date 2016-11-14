@@ -83,6 +83,7 @@ class MainWidget(QMainWindow):
         event.accept()
 
     def init_ui(self):
+        self.setWindowTitle(TITLE)
         self.setWindowIcon(QIcon("img/icon.png"))
         self.ui.action_Help.setIcon(QIcon("img/help-circle.png"))
         self.ui.action_About.triggered.connect(self.act_about_triggered)
@@ -264,7 +265,9 @@ class MainWidget(QMainWindow):
         ct.start()
 
     def act_about_triggered(self):
-        AboutDialog(self).show()
+        about_dlg = AboutDialog(self)
+        about_dlg.setVersion(VERSION)
+        about_dlg.show()
 
     def scan_completed(self, s_code, s_out):
         if s_code == 0:
