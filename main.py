@@ -338,6 +338,12 @@ class MainWidget(QMainWindow):
 def main():
     app = QApplication(sys.argv)
 
+    if os.getuid():
+        QMessageBox.critical(None,"Error","You must be root to run this program")
+        print("You must be root to run this program")
+        exit(1)
+
+
     w = MainWidget()
     w.show()
     sys.exit(app.exec_())
