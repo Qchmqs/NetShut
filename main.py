@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
-from pprint import pprint
 import re
 import shutil
 import subprocess
 import sys
-
 import json
+
 from PyQt5 import QtNetwork
 from PyQt5.QtCore import QThread, pyqtSignal, QSettings, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMessageBox, QAbstractItemView, QTableWidgetItem, QPushButton, qApp, \
     QMainWindow, QInputDialog, QDesktopWidget, QActionGroup
-from about import AboutDialog
 
+from about import AboutDialog
 from ui.main_ui import Ui_MainWindow
 
 TABLE_COLUMN_COUNT = 5
@@ -241,10 +240,18 @@ class MainWidget(QMainWindow):
 
             self.ui.tbl_hosts.setItem(i, R_NAME, QTableWidgetItem(self._hosts_names.get(self._hosts[k][0], "Not Set")))
 
-            self.btn_cut = QPushButton("Cut")
+            self.btn_cut = QPushButton("")
             self.btn_cut.setCheckable(True)
-            self.btn_cut.setChecked(False)
-            self.btn_cut.setIcon(QIcon("img/lan-connect.png"))
+
+            if k in self._cut_hosts:
+                self.btn_cut.setText("Uncut")
+                self.btn_cut.setIcon(QIcon("img/lan-disconnect.png"))
+                self.btn_cut.setChecked(True)
+            else:
+                self.btn_cut.setText("Cut")
+                self.btn_cut.setChecked(False)
+                self.btn_cut.setIcon(QIcon("img/lan-connect.png"))
+
             self.btn_cut.clicked.connect(self.btn_cut_clicked)
             self.ui.tbl_hosts.setCellWidget(i, R_STATUS, self.btn_cut)
 
@@ -365,6 +372,7 @@ def main():
 
     w = MainWidget()
     w.show()
+
     sys.exit(app.exec_())
 
 
