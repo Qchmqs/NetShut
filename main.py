@@ -23,8 +23,8 @@ R_IP, R_MAC, R_MAC_MAN, R_NAME, R_STATUS = range(TABLE_COLUMN_COUNT)
 VERSION = 0.1
 TITLE = "Netshut {}".format(VERSION)
 
-ARPSPOOF = ""
-ARPSCAN = ""
+CMD_ARPSPOOF = shutil.which("arpspoof")
+CMD_ARPSCAN = shutil.which("arp-scan")
 
 
 class CommandThread(QThread):
@@ -264,7 +264,7 @@ class MainWidget(QMainWindow):
         self.ui.tbl_hosts.setRowCount(0)
         self.ui.act_scan.setEnabled(False)
         self.ui.statusbar.showMessage("Scanning")
-        ct = CommandThread("arp-scan --interface={} {}/24".format(self._iface, self._gw), self)
+        ct = CommandThread("{} --interface={} {}/24".format(CMD_ARPSCAN,self._iface, self._gw), self)
         ct.results.connect(self.scan_completed)
         ct.start()
 
@@ -316,9 +316,9 @@ class MainWidget(QMainWindow):
 
     def cut_host(self, index):
         ip = self.ui.tbl_hosts.item(index.row(), R_IP).text()
-        po1 = subprocess.Popen(["arpspoof", "-i", self._iface, "-t", self._gw, ip], stdout=subprocess.PIPE,
+        po1 = subprocess.Popen([CMD_ARPSPOOF, "-i", self._iface, "-t", self._gw, ip], stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=False)
-        po2 = subprocess.Popen(["arpspoof", "-i", self._iface, "-t", ip, self._gw], stdout=subprocess.PIPE,
+        po2 = subprocess.Popen([CMD_ARPSPOOF, "-i", self._iface, "-t", ip, self._gw], stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=False)
         self._cut_hosts[ip] = [po1, po2]
         return True
@@ -347,15 +347,10 @@ def main():
         print("You must be root to run this program")
         exit(1)
 
-    CMD_ARPSCAN = shutil.which("arp-scan")
-    CMD_ARPSPOOF = shutil.which("arpspoof")
-
     if not (CMD_ARPSCAN and CMD_ARPSPOOF):
         QMessageBox.critical(None, "Error", "This program requires the following utilities:\narpspoof\narp-scan")
         print("This program requires the following utilities:\narpspoof\narp-scan")
         exit(2)
-
-
 
     w = MainWidget()
     w.show()
