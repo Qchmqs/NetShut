@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from collections import OrderedDict
 import os
 import re
 import shutil
@@ -179,10 +180,18 @@ class MainWidget(QMainWindow):
             self.ui.act_cut.setText("Resume All")
 
     def resume_all_hosts(self):
-        pass
+        for i, host_ip in enumerate(self._hosts):
+            if host_ip in self._cut_hosts:
+                btn = self.ui.tbl_hosts.cellWidget(i,R_STATUS)
+                btn.setFocus()
+                btn.click()
 
     def cut_all_hosts(self):
-        pass
+        for i, host_ip in enumerate(self._hosts):
+            if host_ip not in self._cut_hosts:
+                btn = self.ui.tbl_hosts.cellWidget(i,R_STATUS)
+                btn.setFocus()
+                btn.click()
 
     def get_ip(self):
         (s_code, s_out) = subprocess.getstatusoutput("ip addr show {}".format(self._iface))
@@ -302,7 +311,7 @@ class MainWidget(QMainWindow):
             del hosts[self._gw]
 
             self._hosts = hosts
-            self._hosts = {k: [v, "Unknown"] for k, v in self._hosts.items()}
+            self._hosts = OrderedDict({k: [v, "Unknown"] for k, v in self._hosts.items()})
             self.set_device_man()
             self.populate_model()
             self.ui.tbl_hosts.resizeColumnsToContents()
