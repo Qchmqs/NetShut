@@ -81,10 +81,19 @@ class MainWidget(QMainWindow):
             f.close()
 
     def closeEvent(self, event):
-        f = open("config", mode="w")
-        json.dump(self._hosts_names, f)
-        f.close()
-        event.accept()
+        msg = QMessageBox()
+        msg.setWindowTitle("NetShut")
+        msg.setText("Are you sure you want to quit NetShut ?")
+        msg.setInformativeText("All cut hosts will be resumed")
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg.setIcon(QMessageBox.Warning)
+        if msg.exec() == QMessageBox.Yes:
+            self.resume_all_hosts()
+            with open("config", mode="w") as f:
+                json.dump(self._hosts_names, f)
+            event.accept()
+        else:
+            event.ignore()
 
     def init_ui(self):
         self.setWindowTitle(TITLE)
