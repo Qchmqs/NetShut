@@ -25,6 +25,7 @@ TITLE = "Netshut {}".format(VERSION)
 
 CMD_ARPSPOOF = shutil.which("arpspoof")
 CMD_ARPSCAN = shutil.which("arp-scan")
+PWD = os.path.dirname(os.path.realpath(__file__))
 
 
 class CommandThread(QThread):
@@ -75,8 +76,8 @@ class MainWindow(QMainWindow):
         self.ui.act_scan.trigger()
 
     def open_config_file(self):
-        if os.path.exists("config"):
-            f = open("config")
+        if os.path.exists(PWD + "/config"):
+            f = open(PWD + "/config")
             self._hosts_names = json.load(f)
             f.close()
 
@@ -274,7 +275,7 @@ class MainWindow(QMainWindow):
             self.ui.tbl_hosts.setCellWidget(i, R_STATUS, self.btn_cut)
 
     def set_device_man(self):
-        f = open("/usr/share/nmap/nmap-mac-prefixes")
+        f = open(PWD + "/oui.txt")
 
         for line in f.readlines():
             for i, k in enumerate(self._hosts):
@@ -285,7 +286,7 @@ class MainWindow(QMainWindow):
         f.close()
 
     def get_device_name(self, mac):
-        f = open("oui.txt")
+        f = open(PWD + "/oui.txt")
 
         for line in f.readlines():
             mac = mac.replace(":", "").upper()[:6]
