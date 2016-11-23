@@ -39,9 +39,9 @@ class CommandThread(QThread):
         self.results.emit(s_code, s_out)
 
 
-class MainWidget(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
-        super(MainWidget, self).__init__()
+        super(MainWindow, self).__init__()
         self.settings = QSettings("IK", "Netshut")
         self.th = None
         self.ui = Ui_MainWindow()
@@ -285,7 +285,7 @@ class MainWidget(QMainWindow):
         f.close()
 
     def get_device_name(self, mac):
-        f = open("/usr/share/nmap/nmap-mac-prefixes")
+        f = open("oui.txt")
 
         for line in f.readlines():
             mac = mac.replace(":", "").upper()[:6]
@@ -307,7 +307,7 @@ class MainWidget(QMainWindow):
 
     def act_about_triggered(self):
         about_dlg = AboutDialog(self)
-        about_dlg.setVersion(VERSION)
+        about_dlg.set_version(VERSION)
         about_dlg.show()
 
     def scan_completed(self, s_code, s_out):
@@ -388,7 +388,7 @@ def main():
         print("This program requires the following utilities:\narpspoof\narp-scan")
         exit(2)
 
-    w = MainWidget()
+    w = MainWindow()
     w.show()
 
     sys.exit(app.exec_())
